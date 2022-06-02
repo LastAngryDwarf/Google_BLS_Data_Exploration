@@ -1,0 +1,82 @@
+---
+title: "BLS Data Project Case Study"
+author: "Greg York"
+date: "`r Sys.Date()`"
+output: html_document
+---
+## Case Study Introduction  
+
+For my capstone project for the Google Certificate in Data Analytics on Coursera,
+I wanted to try something a bit different than the provided business cases. 
+I've always been interested in policy, and the use of data to inform our
+understanding of people and societal trends.  
+
+One of the public data sets the course recommended was from the 
+[BLS](https://www.bls.gov/cps/tables.htm). It includes historical data
+concerning labor force statistics, with some data reaching back as far as 1936.  
+
+This case study is more of a data exploration. I am getting practice in locating,
+downloading, cleaning, organizing, loading, transforming, plotting, and 
+publishing using a variety of tools, including R (and RStudio). I do not have
+a preconceived question in my mind before I start, but I want to see where
+the data takes me.  
+
+### The Setup  
+
+First thing, I have to load the packages I'll need for the analysis. So far,
+I have been leaning heavily on the package 'tidyverse'. Dealing with all of this
+Excel data, I have been using 'readxl' to (some) success.
+
+```{r Library, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(readxl)
+```
+
+Some of the data on the BLS website is not in spreadsheet format. The text files
+included are not delineated in any way (they are designed to be human-readable)
+so importing that data using base R or the library 'readr' proved impossible 
+(for me). So that seemed like a dead-end.  
+
+The PDFs were also a challenge. The data looks like it's in a tabular form.
+The library 'tabulizer' would be useful, but it has not been updated in quite awhile and would not load in my version of R. Instead, I used a utility called
+[Tabula](https://tabula.technology/) which managed to pull most of what I needed
+from the PDFs into a .csv format so I could clean it up in Excel or R to use.
+
+## First Data Set, First Plot  
+
+So just to get my feet wet, I went ahead and looked at the first table on the 
+BLS website, on Employment Status. This XLSX file has general employment trends
+reaching back to 1951.
+
+```{r plot_01}
+file <- "bls_project/1950-2021_general_employment_status_edited.xlsx"
+
+employment_df <- read_excel(file)
+
+## First Plot Code ------------------
+employment_df <- employment_df[1:71,]
+
+ggplot(data = employment_df, aes(x = Year)) +
+        geom_line(aes(y = labor_force_percent_of_population,
+                      color = 'labor_force_percent_of_population',
+                      group = 1), lwd = 2) +
+        geom_line(aes(y = employed_percent_of_population,
+                      color = 'employed_percent_of_population',
+                      group = 1), lwd = 2) +
+        geom_vline(xintercept = 2000, color = "purple", linetype = "longdash") +
+        labs(y = "Percent of Population") +
+        scale_color_discrete(name = "Historical Employment 1951-2021",
+                labels=c("Employed", "In Labor Force")) +
+        geom_text(mapping=aes(x=2000, y=67.4, label = "Year 2000")) +
+        theme(axis.text.x = element_text(angle = 45),
+              legend.position = c(.1,.9))
+```
+
+
+```{r cars}
+summary(cars)
+```
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
