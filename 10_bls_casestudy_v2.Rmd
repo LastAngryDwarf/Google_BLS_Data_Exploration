@@ -17,9 +17,11 @@ concerning labor force statistics, with some data reaching back as far as 1936.
 
 This case study is more of a data exploration. I am getting practice in locating,
 downloading, cleaning, organizing, loading, transforming, plotting, and 
-publishing using a variety of tools, including R (and RStudio). I do not have
-a preconceived question in my mind before I start, but I want to see where
-the data takes me.  
+publishing using a variety of tools, including R (and RStudio). 
+
+**Note! This is very basic so far, I am just getting started. There are no
+earthshattering findings here. Just getting my feet wet.**
+
 
 ### The Setup  
 
@@ -83,48 +85,59 @@ participation rates.
 [Source](https://www.epi.org/publication/books_swa2000_swa2000intro/)  
 
 But after 2000, the percentage of Americans in the labor force begins an
-inexorable decline, along with the percentage of Americans employed (both as
-a percentage of the total population). Why does this happen?  
+inexorable decline, along with the percentage of Americans employed. Why does 
+this happen?  
 
 What I would like to do is explore the differences between a variety of labor and work-force factors in 1999 and compare them to today (2021).
 
 ## Second Data Set, Second Plot  
 
-Back to the BLS website, we pick up another dataset, this time breaking down 
-the historical trends by sex. Here's what labor force participation and
-employment looks like.  
+The first thing I'm going to look at are the people who are NOT in the 
+labor force. Some of the decline will undoubtedly be due to the aging of the
+population in the US. Can I find that in the statistics from the BLS?  
+
+For the 1999 dataset, I need Tabula (referenced above) to pull the data from the
+PDF and drop it into an Excel spreadsheet I can clean up. I combined the 1999 
+and 2021 data into one spreadsheet (which turned out to be a mistake!) and 
+produced this chart:
+
 ```{r plot_02, echo=FALSE, message=FALSE, warning=FALSE}
-# get file, read file
-file <- 
-        "1981-2021_general_employment_status_sex_edited.xlsx"
-employment_sex_df <- read_excel(file)
+employment_not_lf_df <- read_excel("1999_2021_not_in_labor_force_clean.xlsx")
+a <- employment_not_lf_df %>% 
+        filter(year == 1999) %>% 
+        mutate(not_in_labor_force_percent = 
+                       (total_not_in_lf / 207753) * 100) %>% 
+        mutate(not_in_labor_force_percent = round(not_in_labor_force_percent, 1))
 
-# cut off the last entry, it's all NAs by mistake
-employment_sex_df <- employment_sex_df[1:82,]
+b <- employment_not_lf_df %>% 
+        filter(year == 2021) %>% 
+        mutate(not_in_labor_force_percent = 
+                       (total_not_in_lf / 261445) * 100) %>% 
+        mutate(not_in_labor_force_percent = round(not_in_labor_force_percent, 1))
 
-# then plot, this time by sex
+c <- rbind(a,b)
+d <- c[c(1:4,7:10),]
 
-ggplot(data = employment_sex_df, aes(x = Year)) +
-        geom_line(aes(y = labor_force_percent_of_population,
-                      color = 'Labor Force'), lwd = 2) +
-        geom_line(aes(y = employed_percent_of_population,
-                      color = 'Employed'), lwd = 2) +
-        facet_wrap(~Sex) +
-        geom_vline(xintercept = 2000, color = "purple", 
-                   linetype = "longdash") +
+
+
+ggplot(data = d, aes(x = age_or_gender)) +
+        geom_bar(aes(y = not_in_labor_force_percent,
+                      fill =  not_in_labor_force_percent),
+                        stat = "identity") +
+        facet_wrap(~year) +
+        geom_text(aes(y = not_in_labor_force_percent,
+                      label = not_in_labor_force_percent), vjust = -.5) +
         theme(axis.text.x = element_text(angle = 45),
-              legend.position = c(.15,.85)) +
-        labs(y = "Percent of Population") +
-        scale_color_discrete(name = "Employment 1981-2021",
-                             breaks=c('Labor Force','Employed'),
-                             labels=c('% in Labor Force', '% Employed'))
+              legend.position = "none") +
+        labs(y = "Percent of Population", fill="Not in Labor Force (%)") +
+        scale_x_discrete("Age", labels =
+        c("age_16_to_24" = "16 - 24", "age_25_to_54" = "25 - 54", 
+          "age_55_and_over" = "55 +", "all_ages" = "All Ages"))
+
 ```
-  
-Here, we see that men's participation has continued to fall throughout the time
-period; however, women's participation in the labor force peaked in 1999 (60.0%)
-and has been on a downward trend ever since.
+
+Here we see one of the drivers of the decrease in percentage of the population
+in the labor force. Virtually the entire increase in non-workforce participation
+is in those aged 55 and over.
 
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```

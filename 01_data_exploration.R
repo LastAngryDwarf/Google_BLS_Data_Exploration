@@ -58,8 +58,6 @@ p +
         geom_line(aes(x = Year, y = employed_percent_of_population, group=1),
                   color = "purple")
 
-employment_df$Year <- as.integer(employment_df$Year)
-
 # this is the plot I ended up using:
 # I foolishly didn't change the year from chr to int or num,
 # so I have to do that first
@@ -80,6 +78,24 @@ ggplot(data = employment_df, aes(x = Year)) +
         theme(axis.text.x = element_text(angle = 45),
               legend.position = c(.1,.9))
 
+# curious, I want to see not in labor force as a percentage of the total
+
+employment_df <- employment_df %>% 
+        mutate(not_in_labor_force_percent = 
+        (not_in_labor_force_total / civilian_population_total) * 100)
+
+ggplot(data = employment_df, aes(x = Year)) +
+        geom_line(aes(y = not_in_labor_force_percent, group = 1), lwd = 2)
+View(employment_df)
+## new second plot setup - 1999 and 2021 not in labor force ------
+
+
+
+
+
+
+
+
 ## second plot set-up ---------------
 target <- "https://www.bls.gov/cps/cpsaat02.xlsx"
 
@@ -90,17 +106,23 @@ download.file(target, destfile)
 
 # the file needed to be edited, the header was messed up
 # I have to work on downloading these files, they download corrupted
+getwd()
 file <- 
-        "bls_project/1981-2021_general_employment_status_sex_edited.xlsx"
+        "1981-2021_general_employment_status_sex_edited.xlsx"
 
 employment_sex_df <- read_excel(file)
 
 summary(employment_sex_df)
 tail(employment_sex_df)
 
+# cut off the last entry, it's all NAs by mistake
 employment_sex_df <- employment_sex_df[1:82,]
+
+# then plot, this time by sex
 ggplot(data = employment_sex_df, aes(x = Year)) +
         geom_line(aes(y = labor_force_percent_of_population,
+                      color = Sex), lwd = 2) +
+        geom_line(aes(y = employed_percent_of_population,
                       color = Sex), lwd = 2) +
         geom_vline(xintercept = 2000, color = "purple", 
                    linetype = "longdash") +
@@ -110,9 +132,55 @@ ggplot(data = employment_sex_df, aes(x = Year)) +
         scale_color_discrete(name = "Historical Employment 1981-2021 by Sex",
                              breaks=c('M','F'),
                              labels=c("Male", "Female"))
+# use this plot for the case study
+ggplot(data = employment_sex_df, aes(x = Year)) +
+        geom_line(aes(y = labor_force_percent_of_population,
+                      color = 'Labor Force'), lwd = 2) +
+        geom_line(aes(y = employed_percent_of_population,
+                      color = 'Employed'), lwd = 2) +
+        facet_wrap(~Sex) +
+        geom_vline(xintercept = 2000, color = "purple", 
+                   linetype = "longdash") +
+        theme(axis.text.x = element_text(angle = 45),
+              legend.position = c(.1,.9)) +
+        labs(x = c("Female", "Male"), y = "Percent of Population") +
+        scale_color_discrete(name = "Employment 1981-2021",
+                             breaks=c('Labor Force','Employed'),
+                             labels=c('% in Labor Force', '% Employed'))
+                             
 
 ## third plot --------------------
+employment_not_lf_df <- read_excel("1999_2021_not_in_labor_force_clean.xlsx")
+a <- employment_not_lf_df %>% 
+        filter(year == 1999) %>% 
+        mutate(not_in_labor_force_percent = 
+                       (total_not_in_lf / 207753) * 100) %>% 
+        mutate(not_in_labor_force_percent = round(not_in_labor_force_percent, 1))
+
+a <- round(a$not_in_labor_force_percent, digits = 0)
+
+b <- employment_not_lf_df %>% 
+        filter(year == 2021) %>% 
+        mutate(not_in_labor_force_percent = 
+                       (total_not_in_lf / 261445) * 100) %>% 
+        mutate(not_in_labor_force_percent = round(not_in_labor_force_percent, 1))
+
+c <- rbind(a,b)
+d <- c[c(1:4,7:10),]
 
 
-
+ggplot(data = d, aes(x = age_or_gender)) +
+        geom_bar(aes(y = not_in_labor_force_percent,
+                      fill =  not_in_labor_force_percent),
+                        stat = "identity") +
+        facet_wrap(~year) +
+        geom_text(aes(y = not_in_labor_force_percent,
+                      label = not_in_labor_force_percent), vjust = -.5) +
+        theme(axis.text.x = element_text(angle = 45),
+              legend.position = c(.1,.9)) +
+        labs(y = "Percent of Population", fill="Labor Force %") +
+        scale_x_discrete("Age", labels =
+        c("age_16_to_24" = "16-24", "age_25_to_54" = "25-54", 
+          "age_55_and_over" = "55+", "all_ages" = "All Ages"))
+        
 
